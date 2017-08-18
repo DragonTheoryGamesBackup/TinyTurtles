@@ -135,7 +135,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a5ecf3f5de47c24f8412a417377b02e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TerrainHexPrefab: {fileID: 1563403282319320, guid: 6f87afaf8c1034f4cb15bd8b076329b2,
+  TerrainHexPrefab: {fileID: 1265532947172506, guid: 6f87afaf8c1034f4cb15bd8b076329b2,
     type: 2}
   Materials:
   - {fileID: 2100000, guid: 5b01347c09d0c384b8a0b33a531f5755, type: 2}
