@@ -7,7 +7,7 @@ public class IslandGenerator : MonoBehaviour
 
     [SerializeField]
     GameObject TerrainHexPrefab;
-    int mapSize = 100;
+    int mapSize = 64;
     int LandSize = 32;
     [SerializeField]
     Material[] Materials;
