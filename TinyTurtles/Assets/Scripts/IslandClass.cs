@@ -14,10 +14,9 @@ public class IslandClass : MonoBehaviour
     int S;//sum
 
     //keeps neighbors in clockwise order
-    GameObject[] Neighbors = new GameObject[6];
-
     [SerializeField]
-    static GameObject[] AllNodes;
+    public List<GameObject> neighbors;
+    //GameObject[] neighbors = new GameObject[6];
 
     //math for mapmaking
     static float radius = 1f;
@@ -25,16 +24,22 @@ public class IslandClass : MonoBehaviour
     static float WIDTH_MATH = Mathf.Sqrt(3) / 2;
     static float width = WIDTH_MATH * length;
 
-    public int GetCoords(string coord)
+    public Vector2 GetLocation()
     {
-        int ret;
-        if (coord == "Q") { ret = Q; }
-        else if (coord == "R") { ret = R; }
-        else if (coord == "S") { ret = S; }
-        else ret = 0;
-        return ret;
+        return new Vector2(Q, R);
     }
 
+    public void SetNeighbors(GameObject[] newNeighbors)
+    {
+        neighbors = new List<GameObject>(newNeighbors);
+    }
+
+    public GameObject GetNeighbor()
+    {
+        GameObject ret = neighbors[Random.Range(0, neighbors.Count - 1)];  //get random tile from neighbors.
+        neighbors.Remove(ret);
+        return ret;
+    }
 
     //return world space of this Hex
     //Column = q, Row = r
@@ -44,19 +49,6 @@ public class IslandClass : MonoBehaviour
         R = r;
         S = -(q + r);
         this.GetComponent<Transform>().position=new Vector3(width * (q + r / 2f), 0, (length * 0.75f) * r);
-    }
-
-    public void SetNeighbors()
-    {
-        AllNodes = GameObject.FindGameObjectsWithTag("SeaNode");
-        foreach (GameObject node in AllNodes)
-        {
-            Debug.Log(node);
-            //int nodeQ = node.GetComponentsInParent<IslandClass>().
-            //int nodeR = node.GetComponents<IslandClass>().R;
-            //int nodeS = node.GetComponents<IslandClass>().S;
-            //if (node.Q == Q && node.R == (R + 1)) { }
-        }
     }
 
     public void UpdateTileType(Material material, string typeNode)
