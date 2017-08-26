@@ -6,6 +6,7 @@ TagManager:
   tags:
   - SeaNode
   - LandNode
+  - MenuPanel
   layers:
   - Default
   - TransparentFX
