@@ -42,6 +42,15 @@ public class IslandClass : MonoBehaviour
     }
 
     /// <summary>
+    /// Step 1: Add +1 height on the Y axis for landNodes
+    /// </summary>
+    public void UpdatePosition()
+    {
+        // Step 1: Add +1 height on the Y axis for landNodes   
+        this.GetComponent<Transform>().position = new Vector3(this.GetComponent<Transform>().position.x, .5f, this.GetComponent<Transform>().position.z);
+    }
+
+    /// <summary>
     /// Step 1: Return this Nodes Location.
     /// </summary>
     /// <returns></returns>

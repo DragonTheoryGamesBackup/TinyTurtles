@@ -10,8 +10,8 @@ public class IslandGenerator : MonoBehaviour
     Material[] Materials;
 
     static int landSize = 256; //sets the size of the landmass
-    static int sizeFloor = (int)Mathf.Floor(Mathf.Log10(landSize * landSize) + 1) * 2;     //wheatley number to keep the mapsize under control
-    static int mapSize = (landSize / sizeFloor) + 16; //and sets how many total tiles there will be
+    static int sizeCeiling = (int)Mathf.Floor(Mathf.Log10(landSize * landSize) + 1) * 2; //keep the mapsize under control
+    static int mapSize = (landSize / sizeCeiling) + 16; //and sets how many total tiles there will be
     
     private GameObject[] allNodes; //tracks every node.
     private List<GameObject> allBeachNodes = new List<GameObject>(); //tracks of every land node that can be expanded
@@ -102,6 +102,7 @@ public class IslandGenerator : MonoBehaviour
     /// <summary>
     /// Step 1: Create the first Land Node.
     /// Step 2: Create Additional Land Nodes until Land Size is reached.
+    /// Step 3: Make all nodes Static for performance.
     /// </summary>
     private void GenerateLandMass()
     {
@@ -137,6 +138,8 @@ public class IslandGenerator : MonoBehaviour
                 }
             }
         }
+        // Step 3: Make all nodes Static for performance.
+        MakeStatic();
     }
 
     /// <summary>
@@ -149,6 +152,7 @@ public class IslandGenerator : MonoBehaviour
         // Step 1: Change Sea Node into Land Node.
         allBeachNodes.Add(targetNode); //add it to the list
         targetNode.GetComponent<IslandClass>().UpdateTileType(Materials[1], "LandNode"); // and make it land
+        targetNode.GetComponent<IslandClass>().UpdatePosition();
         // Step 2: Remove Node from their Neighbors Neighbors.
         targetNode.GetComponent<IslandClass>().RemoveFromNeighbors(); //Let its neighbors know
     }
@@ -156,10 +160,22 @@ public class IslandGenerator : MonoBehaviour
     /// <summary>
     /// Step 1: Remove Node from allBeachNodes and add it to allLandLockedNodes
     /// </summary>
-    /// <param name="fullLand">Node to be moved.</param>
+    /// <param name="fullLand">Node to be moved</param>
     private void MoveLand(GameObject fullLand)
     {
         allLandLockedNodes.Add(fullLand);
         allBeachNodes.Remove(fullLand);
+    }
+
+    /// <summary>
+    /// Step 1: Make all nodes Static for performance.
+    /// </summary>
+    private void MakeStatic()
+    {
+        // Step 1: Make all nodes Static for performance.
+        foreach (GameObject node in allNodes)
+        {
+            node.isStatic = true;
+        }
     }
 }
