@@ -6,31 +6,35 @@ public class IslandGenerator : MonoBehaviour
 {
     [SerializeField]
     GameObject TerrainHexPrefab;
-    //don't set higher than 32 until we speek up the build.
-    static int landSize = 16;
-    int mapSize = (landSize * 2) + 1;
     [SerializeField]
     Material[] Materials;
 
-    private List<GameObject> allFullNodes = new List<GameObject>();
-    //private GameObject[] allLandNodes;
-    private List<GameObject> allLandNodes = new List<GameObject>();
-    private GameObject[] allNodes;
+    static int landSize = 256; //sets the size of the landmass
+    static int sizeFloor = (int)Mathf.Floor(Mathf.Log10(landSize * landSize) + 1) * 2;     //wheatley number to keep the mapsize under control
+    static int mapSize = (landSize / sizeFloor) + 16; //and sets how many total tiles there will be
+    
+    private GameObject[] allNodes; //tracks every node.
+    private List<GameObject> allBeachNodes = new List<GameObject>(); //tracks of every land node that can be expanded
+    private List<GameObject> allLandLockedNodes = new List<GameObject>(); //tracks every land node that can not be expanded  
+
 
     private void Start()
     {
         GenerateMap();
     }
 
-    //Generates the water grid with single island tile at its center.
+    /// <summary>
+    /// Step 1: Generate water grid.
+    /// Step 2: Have all tiles find their Neighbors.
+    /// </summary>
     private void GenerateMap()
     {
+        //Step 1: Generate water grid.
         for (int column = 0; column < mapSize; column++)
         {
             for (int row = 0; row < mapSize; row++)
             {
-                //creates all the island nodes.
-
+                //creates all the island babies
                 GameObject TerrainNode = (GameObject)
                     Instantiate(
                     TerrainHexPrefab,
@@ -38,35 +42,42 @@ public class IslandGenerator : MonoBehaviour
                     Quaternion.identity,
                     this.transform
                     );
-                //Name our babies
-                TerrainNode.name = string.Format("{0},{1}", column, row);
-                TerrainNode.GetComponent<IslandClass>().SetPosition(column, row);
-                //Make the sea
-                TerrainNode.GetComponent<IslandClass>().UpdateTileType(Materials[0], "SeaNode");
-                //!!!!!set debug coords.  Remove later!!!!!.
-                TerrainNode.GetComponentInChildren<TextMesh>().text = string.Format("{0},{1}", column, row);
-                //TerrainNode.GetComponentInChildren<TextMesh>().text = ("");
+                TerrainNode.name = string.Format("{0},{1}", column, row); //Name our babies
+                TerrainNode.GetComponent<IslandClass>().SetPosition(column, row, this.gameObject); //place them in there new home
+                TerrainNode.GetComponent<IslandClass>().UpdateTileType(Materials[0], "SeaNode"); //Make them sea
+                
+                //next two lines are debug tools for setting position text on each node.
+                //TerrainNode.GetComponentInChildren<TextMesh>().text = string.Format("{0},{1}", column, row);
+                TerrainNode.GetComponentInChildren<TextMesh>().text = ("");
             }
         }
-        //have all tiles find their neighbors
+        //Step 2: Have all tiles find their Neighbors.
         allNodes = GameObject.FindGameObjectsWithTag("SeaNode");
         foreach (GameObject node in allNodes)
         {
             Vector3 location = node.GetComponent<IslandClass>().GetLocation();
-            GameObject[] tempNeighbors = new GameObject[6];
+            GameObject[] Neighbors = new GameObject[6];
             for (int i = 0; i < 6; i++)
             {
-                tempNeighbors[i] = FindNeighbor(location.x, location.y, i);
+                Neighbors[i] = FindNeighbor(location.x, location.y, i);
             }
-            node.GetComponent<IslandClass>().SetNeighbors(tempNeighbors);
+            node.GetComponent<IslandClass>().SetNeighbors(Neighbors);
         }
-        //Then make landTiles
+        //Time to make the Land
         GenerateLandMass();
     }
 
+    /// <summary>
+    /// Step 1: Identify Neighbors position.
+    /// Step 2: Locate matching Neighbor.
+    /// </summary>
+    /// <param name="q">Column</param>
+    /// <param name="r">Row</param>
+    /// <param name="side">Neighbor To Return Location</param>
+    /// <returns>Neighbors Position</returns>
     private GameObject FindNeighbor(float q, float r, int side)
     {
-        GameObject ret = null;
+        GameObject ret = null; //return var
         switch (side)
         {
             case 0: r += 1; break;
@@ -88,48 +99,67 @@ public class IslandGenerator : MonoBehaviour
         return ret;
     }
 
+    /// <summary>
+    /// Step 1: Create the first Land Node.
+    /// Step 2: Create Additional Land Nodes until Land Size is reached.
+    /// </summary>
     private void GenerateLandMass()
     {
+        //Step 1: Create teh first Land Node.
         GameObject targetNode = null;
-        if (allLandNodes.Count < 1)
+        if (allBeachNodes.Count < 1)
         {
             int intCenterNode = mapSize / 2;
             foreach (GameObject node in allNodes)
             {
                 if (node.GetComponent<IslandClass>().GetLocation() == new Vector2(intCenterNode, intCenterNode))
                 {
-                    targetNode = node;
-                    targetNode.GetComponent<IslandClass>().UpdateTileType(Materials[1], "LandNode");
-                    allLandNodes.Add(targetNode);
+                    MakeLand(node);
                     break;
                 }
             }
         }
-        int count = 0;
-        while (landSize > (allLandNodes.Count + allFullNodes.Count) && count < 150)
+
+        //Step 2: Create Additional Land Nodes until Land Size is reached.
+        while ((allBeachNodes.Count + allLandLockedNodes.Count) < landSize)
         {
-            targetNode = allLandNodes[Random.Range(0, allLandNodes.Count - 1)];  //get random tile from array.
-            if (targetNode.GetComponent<IslandClass>().neighbors.Count > 0)
+            targetNode = allBeachNodes[Random.Range(0, allBeachNodes.Count - 1)];  //get random tile from array.
+            if (targetNode.GetComponent<IslandClass>().neighbors.Count == 0)
             {
-                GameObject targetNeighbor = targetNode.GetComponent<IslandClass>().GetNeighbor(); //get that tiles neighbor.
-                if (targetNeighbor.GetComponent<Transform>().tag != "LandNode") //if that tile is not already land
-                {
-                    allLandNodes.Add(targetNeighbor); //add it to the list
-                    targetNeighbor.GetComponent<IslandClass>().UpdateTileType(Materials[1], "LandNode"); // and make it land
-                }
-                else { targetNode.GetComponent<IslandClass>().neighbors.Remove(targetNeighbor); }
+                MoveLand(targetNode);
             }
-            else { MoveLand(targetNode); }
-            count++;
+            else
+            {
+                targetNode = targetNode.GetComponent<IslandClass>().GetNeighbor(); //get that tiles neighbor.
+                if (targetNode.GetComponent<Transform>().tag != "LandNode") //if that tile is not already land
+                {
+                    MakeLand(targetNode);
+                }
+            }
         }
-        Debug.Log(count);
-        Debug.Log(allFullNodes.Count);
-        Debug.Log(allFullNodes.Count + allLandNodes.Count);
     }
 
-    public void MoveLand(GameObject fullLand)
+    /// <summary>
+    /// Step 1: Change Sea Node into Land Node.
+    /// Step 2: Remove Node from their Neighbors Neighbors.
+    /// </summary>
+    /// <param name="targetNode">Node to be turned into Land.</param>
+    private void MakeLand(GameObject targetNode)
     {
-        allFullNodes.Add(fullLand);
-        allLandNodes.Remove(fullLand);
+        // Step 1: Change Sea Node into Land Node.
+        allBeachNodes.Add(targetNode); //add it to the list
+        targetNode.GetComponent<IslandClass>().UpdateTileType(Materials[1], "LandNode"); // and make it land
+        // Step 2: Remove Node from their Neighbors Neighbors.
+        targetNode.GetComponent<IslandClass>().RemoveFromNeighbors(); //Let its neighbors know
+    }
+
+    /// <summary>
+    /// Step 1: Remove Node from allBeachNodes and add it to allLandLockedNodes
+    /// </summary>
+    /// <param name="fullLand">Node to be moved.</param>
+    private void MoveLand(GameObject fullLand)
+    {
+        allLandLockedNodes.Add(fullLand);
+        allBeachNodes.Remove(fullLand);
     }
 }
