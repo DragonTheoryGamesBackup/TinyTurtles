@@ -4,23 +4,23 @@ using UnityEngine;
 
 public class IslandGenerator : MonoBehaviour
 {
-    [SerializeField]
-    GameObject TerrainHexPrefab;
-    [SerializeField]
-    Material[] Materials;
+    [SerializeField] GameObject TerrainHexPrefab;
+    [SerializeField] GameObject StartsPrefab;
+    [SerializeField] Material[] Materials;
 
     static int landSize = 256; //sets the size of the landmass
     static int sizeCeiling = (int)Mathf.Floor(Mathf.Log10(landSize * landSize) + 1) * 2; //keep the mapsize under control
     static int mapSize = (landSize / sizeCeiling) + 16; //and sets how many total tiles there will be
-    
+
     private GameObject[] allNodes; //tracks every node.
     private List<GameObject> allBeachNodes = new List<GameObject>(); //tracks of every land node that can be expanded
     private List<GameObject> allLandLockedNodes = new List<GameObject>(); //tracks every land node that can not be expanded  
 
 
-    private void Start()
+    public void CallMethod(string method)
     {
-        GenerateMap();
+        if (method == "GenerateMap") { GenerateMap(); }
+        if (method == "SetStarts") { SetStarts(); }
     }
 
     /// <summary>
@@ -43,9 +43,9 @@ public class IslandGenerator : MonoBehaviour
                     this.transform
                     );
                 TerrainNode.name = string.Format("{0},{1}", column, row); //Name our babies
-                TerrainNode.GetComponent<IslandClass>().SetPosition(column, row, this.gameObject); //place them in there new home
+                TerrainNode.GetComponent<IslandClass>().SetPosition(column, row, this.gameObject); //place them in their new home
                 TerrainNode.GetComponent<IslandClass>().UpdateTileType(Materials[0], "SeaNode"); //Make them sea
-                
+
                 //next two lines are debug tools for setting position text on each node.
                 //TerrainNode.GetComponentInChildren<TextMesh>().text = string.Format("{0},{1}", column, row);
                 TerrainNode.GetComponentInChildren<TextMesh>().text = ("");
@@ -106,7 +106,7 @@ public class IslandGenerator : MonoBehaviour
     /// </summary>
     private void GenerateLandMass()
     {
-        //Step 1: Create teh first Land Node.
+        //Step 1: Create the first Land Node.
         GameObject targetNode = null;
         if (allBeachNodes.Count < 1)
         {
@@ -176,6 +176,46 @@ public class IslandGenerator : MonoBehaviour
         foreach (GameObject node in allNodes)
         {
             node.isStatic = true;
+        }
+    }
+
+    /// <summary>
+    /// Step 1: Find every Beach Node.
+    /// Step 2: Find Rotation.
+    /// Step 3: Create starts.
+    /// </summary>
+    private void SetStarts()
+    {
+        //Step 1: Find every Beach Node.
+        foreach (GameObject node in allBeachNodes)
+        {
+            if (node.GetComponent<IslandClass>().neighbors.Count > 0)
+            {
+                // Step 2: Find Rotation.
+                foreach (GameObject beach in node.GetComponent<IslandClass>().neighbors)
+                {
+                    int yRotate = 0;
+                    float diffX = node.GetComponent<IslandClass>().GetLocation().x - beach.GetComponent<IslandClass>().GetLocation().x;
+                    float diffY = node.GetComponent<IslandClass>().GetLocation().y - beach.GetComponent<IslandClass>().GetLocation().y;
+                    Vector2 diffXY = new Vector2(diffX, diffY);
+
+                    if (diffXY == new Vector2(0,1)) { yRotate = 120; }
+                    else if (diffXY == new Vector2(1, 0)) { yRotate = 180; }
+                    else if (diffXY == new Vector2(1, -1)) { yRotate = 240; }
+                    else if (diffXY == new Vector2(0, -1)) { yRotate = 300; }
+                    else if (diffXY == new Vector2(-1, 0)) { yRotate = 0; }
+                    else if (diffXY == new Vector2(-1, 1)) { yRotate = 60; }
+
+                    // Step 3: Create starts.
+                    GameObject Starts = (GameObject)
+                        Instantiate(
+                        StartsPrefab,
+                        new Vector3(node.GetComponent<Transform>().position.x, .6f, node.GetComponent<Transform>().position.z),
+                        Quaternion.Euler(0,yRotate,0),
+                        node.GetComponent<Transform>()
+                        );
+                }
+            }
         }
     }
 }

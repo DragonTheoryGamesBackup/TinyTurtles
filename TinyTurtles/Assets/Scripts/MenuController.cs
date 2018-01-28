@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class ButtonController : MonoBehaviour {
+public class MenuController : MonoBehaviour {
 
     private GameObject[] allMenuPanels;
 

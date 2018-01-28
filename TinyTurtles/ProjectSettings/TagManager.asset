@@ -7,6 +7,10 @@ TagManager:
   - SeaNode
   - LandNode
   - MenuPanel
+  - Start
+  - Camera
+  - GUI
+  - Path
   layers:
   - Default
   - TransparentFX
